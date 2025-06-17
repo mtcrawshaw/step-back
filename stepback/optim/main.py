@@ -156,7 +156,7 @@ def get_scheduler(config: dict, opt: torch.optim.Optimizer) -> torch.optim.lr_sc
     name = config.get('lr_schedule', 'constant')
 
     # default is to step scheduler end of epoch
-    # but with this arg we can step scheduler after each step 
+    # but with this arg we can step scheduler after each step
     step_on_epoch = not config.get('stepwise_schedule')
 
     warmup_steps = config.get('warmup_steps', 0)
