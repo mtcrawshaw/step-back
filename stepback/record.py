@@ -6,13 +6,12 @@ import numpy as np
 import copy
 import itertools
 import os
-from typing import Union
+from typing import Union, Optional, Tuple
 import warnings
 from pandas.api.types import is_numeric_dtype
 
 from .log import Container
 from .defaults import DEFAULTS
-
 
 
 SCORE_NAMES = {'train_loss': 'Training loss', 
@@ -22,9 +21,9 @@ SCORE_NAMES = {'train_loss': 'Training loss',
                'model_norm': r'$\|x^k\|$',
                'grad_norm': r'$\|g_k\|$',
                'fstar': r'$f_*^k$'
-               }
+}
 
-AES = { 'sgd':              {'color': '#7fb285', 'markevery': 15, 'zorder': 7},
+AES = { 'sgd':              {'color': "#f68427", 'markevery': 15, 'zorder': 7},
         'sgd-m':            {'color': '#de9151', 'markevery': 8, 'zorder': 8},
         'adam':             {'color': '#f34213', 'markevery': 10, 'zorder': 9}, 
         'adamw':            {'color': '#f34213', 'markevery': 10, 'zorder': 9},
@@ -37,14 +36,10 @@ AES = { 'sgd':              {'color': '#7fb285', 'markevery': 15, 'zorder': 7},
         'adabound':         {'color': '#4f9d69', 'markevery': 10, 'zorder': 5},
         'lion':             {'color': '#dbabab', 'markevery': 10, 'zorder': 4},
         'default':          {'color': 'grey','markevery': 3, 'zorder': 1},
-        }
+}
 
 # more colors:
-#F7CE5B
-#4FB0C6
-#648381
-#F7B801
-#7ea2aa
+#7fb285
 
 ALL_MARKER = ('o', 'v', 'H', 's', '>', '<' , '^', 'D', 'x')
 nan_mean_fun = lambda x: x.mean(skipna=False)
@@ -92,14 +87,14 @@ class Record:
         """
         all_ix = list()
 
-        for k,v in drop.items():
+        for k, v in drop.items():
             if not isinstance(v, list):
                 v = [v] # if single value is given convert to list
             
             ix = ~self.id_df[k].isin(v) # indices to drop --> negate
             all_ix.append(ix)
 
-        for k,v in keep.items():
+        for k, v in keep.items():
             if not isinstance(v, list):
                 v = [v] # if single value is given convert to list
             
@@ -137,14 +132,27 @@ class Record:
             # pandas has a bug that we cannot insert a series into this_df.loc[row_ix, ..]
             # but we can insert into row, so we concat the modified rows
             if 'step_logs' in this_df.columns:
-                self._stepwise_log_columns = list()
+                HAVE_STEPWISE_LR = bool(opt_dict.get("stepwise_schedule"))
+
+                # some sanity checks/warnings
+                if HAVE_STEPWISE_LR and not ("stepwise_lr" not in this_df.columns):
+                    warnings.warn(f"ID {id}: Expected stepwise LR log, but none found. This might cause errors in analysis.")
+                if not HAVE_STEPWISE_LR and ("stepwise_lr" in this_df.columns):
+                    warnings.warn(f"ID {id}: Found stepwise LR log, but no stepwise LR scheduling. Will be overwritten.")
+                    
                 new_rows = list()
                 for row_ix, row in this_df.iterrows():
                     for k, v in row['step_logs'].items():
                         row['stepwise_' + k] = pd.Series(v, name=k)
-                        self._stepwise_log_columns.append('stepwise_' + k)
+                    
+                    # reconstruct when no stepwise LR scheduling
+                    if not HAVE_STEPWISE_LR:
+                        # use step indices from last item, and ffill the learning rate from this epoch
+                        _reconstructed_lr = dict(zip(v.keys(), row['learning_rate'] * np.ones(len(v))))
+                        row['stepwise_lr'] = pd.Series(_reconstructed_lr, name='lr')
+                
                     new_rows.append(row)
-                self._stepwise_log_columns = set(self._stepwise_log_columns)
+                
                 this_df = pd.DataFrame(new_rows)
                 this_df = this_df.drop(columns=['step_logs'])
 
@@ -217,7 +225,12 @@ class Record:
         
         return df
     
-    def build_sweep_df(self, score='val_score', xaxis='lr', ignore_columns=list(), cutoff=None):
+    def build_sweep_df(self,
+                       score: str='val_score',
+                       xaxis: str='lr',
+                       ignore_columns: list=list(),
+                       cutoff: Optional[Tuple]=None
+        ):
 
         base_df = self.base_df.copy()
         id_df = self.id_df.copy()
@@ -229,7 +242,8 @@ class Record:
         if cutoff is None:
             cutoff_epoch = (max_epoch[0], max_epoch[0])
         else:
-            cutoff_epoch = (cutoff, max_epoch[0])
+            assert len(cutoff) == 2, f"Cutoff needs to be tuple (len 2), but is given as {cutoff}."
+            cutoff_epoch = (cutoff[0], cutoff[1])
 
         # filter epochs
         sub_df = base_df[(base_df.epoch >= cutoff_epoch[0])

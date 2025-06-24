@@ -199,6 +199,11 @@ class Base:
         score_list = []   
         self._epochs_trained = 0
 
+        _init_model_norm = l2_norm(self.model)
+        self.results['summary']['init_model_norm'] = _init_model_norm
+        if self.verbose:
+            print(f"Initial model L2-norm: ", _init_model_norm)
+
         for epoch in range(self.config['max_epoch']):
             
             print(f"Epoch {epoch}, current learning rate", self.sched.get_last_lr()[0])
@@ -254,11 +259,13 @@ class Base:
             self._epochs_trained += 1
         
         end_time = str(datetime.datetime.now())
-        
+
         # ==== store =====================
         self.results['history'] = copy.deepcopy(score_list)
         self.results['summary']['start_time'] = start_time
         self.results['summary']['end_time'] = end_time
+        self.results['summary']['final_model_norm'] = l2_norm(self.model)
+        
         return
 
     def train_epoch(self):
