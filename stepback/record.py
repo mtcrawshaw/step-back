@@ -79,9 +79,17 @@ class Record:
         self.base_df = self._build_base_df(agg='mean')
         return
     
-    def filter(self, drop=dict(), keep=dict()):
-        """Filter out by columns in id_df. Drops if any condition is true.
-        For example, use exclude = {'name': 'adam'} to drop all results from Adam. 
+    def filter(self, drop=dict(), keep=dict(), any=False):
+        """Filter out by columns in id_df. 
+        
+        if all=True:
+         * Drops if any condition is true.
+         * Keeps if all conditions are true.
+        if all=False:
+         * Drops if all conditions are true.
+         * Keeps if any conditions is true.        
+
+        For example, use drop={'name': 'adam'} to drop all results from Adam. 
         
         NOTE: This overwrites the base_df and id_df object.
         """
@@ -101,8 +109,11 @@ class Record:
             ix = self.id_df[k].isin(v) # indices to keep
             all_ix.append(ix)
 
-        ixx = pd.concat(all_ix, axis=1).all(axis=1) # keep where all True
-
+        if not any:
+            ixx = pd.concat(all_ix, axis=1).all(axis=1) # keep where all True
+        else:
+            ixx = pd.concat(all_ix, axis=1).any(axis=1) # keep where any True
+            
         ids_to_keep = ixx.index[ixx.values]
 
         self.base_df = self.base_df[self.base_df.id.isin(ids_to_keep)]
