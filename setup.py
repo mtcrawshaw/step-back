@@ -11,11 +11,23 @@ REQUIRES_PYTHON = '>=3.8.0'
 VERSION = stepback.__version__
 
 setup(name=NAME,
-      version=VERSION,
-      description=DESCRIPTION,
-      url=URL,
-      author=AUTHOR,
-      author_email=EMAIL,
-      license='MIT',
-      packages=find_packages(exclude=["tests"]),
-      zip_safe=False)
+    version=VERSION,
+    description=DESCRIPTION,
+    url=URL,
+    author=AUTHOR,
+    author_email=EMAIL,
+    license='MIT',
+    packages=find_packages(exclude=["tests"]),
+    zip_safe=False,
+    install_requires=[
+        "tqdm",
+        "numpy",
+        "scikit-learn",
+        "pandas",
+        "matplotlib",
+        "seaborn",
+        "Pillow",
+        "torch",
+        "torchvision",
+    ]
+)
