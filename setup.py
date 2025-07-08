@@ -29,5 +29,6 @@ setup(name=NAME,
         "Pillow",
         "torch",
         "torchvision",
+        "einops",
     ]
 )

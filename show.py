@@ -1,6 +1,7 @@
 """
 Script for generating plots.
 """
+import os
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
@@ -22,6 +23,9 @@ try:
 except:
     exp_id = 'cifar100_resnet110'
     save = False
+outdir = 'output/plots/' + exp_id
+if not os.path.isdir(outdir):
+    os.makedirs(outdir)
 
 output_names = get_output_filenames(exp_id)
 ############################################################

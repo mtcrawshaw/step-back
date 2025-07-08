@@ -188,8 +188,13 @@ class Base:
     
     def _init_opt(self, opt_obj, hyperp):
         """Initializes the opt object. If your optimizer needs custom commands, add them here."""
+
+        p = self.model.parameters()
+        if 'muon' in self.config["opt"]["name"]:
+            p = self.model.named_parameters()
+            hyperp["architecture"] = self.config["model"]
         
-        self.opt = opt_obj(params=self.model.parameters(), **hyperp)         
+        self.opt = opt_obj(p, **hyperp)
         
         print(self.opt)        
         return
@@ -325,7 +330,6 @@ class Base:
                     self._log_stepwise["grad_norm"][total_step_counter] = grad_norm(self.model)
                     if not self._step_scheduler_on_epoch:
                         self._log_stepwise["lr"][total_step_counter] = self.sched.get_last_lr()[0]
-
 
             if not self._step_scheduler_on_epoch:
                 self.sched.step()

@@ -15,6 +15,9 @@ def load_json(file_name, output_dir):
     return d
 
 def save_json(file_name, results, output_dir):
+    last_dir = os.path.dirname(os.path.join(output_dir, file_name))
+    if not os.path.isdir(last_dir):
+        os.makedirs(last_dir)
     with open(os.path.join(output_dir, file_name) + '.json', "w") as f:
         json.dump(results, f, indent=4, sort_keys=True)
     
