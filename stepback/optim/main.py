@@ -9,6 +9,7 @@ from .sps import SPS
 from .adabound import AdaBoundW
 from .adabelief import AdaBelief
 from .lion import Lion
+from .muon import Muon
 
 def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
     """
@@ -142,6 +143,91 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
         hyperp = {'lr': opt_config.get('lr', 1e-3),
                   'weight_decay': opt_config.get('weight_decay', 0),
                   'betas': opt_config.get('betas', (0.9, 0.99)),
+                  }
+    elif name == 'muon':
+        opt_obj = Muon
+        lmo = True
+        l2_prod_norm = False
+        rms_layer_norm = False
+        nuc_approx = None
+        hyperp = {'lr': opt_config.get('lr', 1e-3),
+                  'wd': opt_config.get('weight_decay', 0),
+                  'momentum': opt_config.get('momentum', 0.95),
+                  'nesterov': True,
+                  'ns_steps': opt_config.get('ns_steps', 5),
+                  'lmo': lmo,
+                  'l2_prod_norm': l2_prod_norm,
+                  'nuc_approx': nuc_approx,
+                  'rms_layer_norm': rms_layer_norm,
+                  'adamw_betas': opt_config.get('betas', (0.95, 0.95)),
+                  }
+    elif name == 'muon-gd':
+        opt_obj = Muon
+        lmo = False
+        l2_prod_norm = False
+        rms_layer_norm = False
+        nuc_approx = None
+        hyperp = {'lr': opt_config.get('lr', 1e-3),
+                  'wd': opt_config.get('weight_decay', 0),
+                  'momentum': opt_config.get('momentum', 0.95),
+                  'nesterov': True,
+                  'ns_steps': opt_config.get('ns_steps', 5),
+                  'lmo': lmo,
+                  'l2_prod_norm': l2_prod_norm,
+                  'nuc_approx': nuc_approx,
+                  'rms_layer_norm': rms_layer_norm,
+                  'adamw_betas': opt_config.get('betas', (0.95, 0.95)),
+                  }
+    elif name == 'muon-gd-stale':
+        opt_obj = Muon
+        lmo = False
+        l2_prod_norm = False
+        rms_layer_norm = False
+        nuc_approx = "past"
+        hyperp = {'lr': opt_config.get('lr', 1e-3),
+                  'wd': opt_config.get('weight_decay', 0),
+                  'momentum': opt_config.get('momentum', 0.95),
+                  'nesterov': True,
+                  'ns_steps': opt_config.get('ns_steps', 5),
+                  'lmo': lmo,
+                  'l2_prod_norm': l2_prod_norm,
+                  'nuc_approx': nuc_approx,
+                  'rms_layer_norm': rms_layer_norm,
+                  'adamw_betas': opt_config.get('betas', (0.95, 0.95)),
+                  }
+    elif name == 'muon-l2':
+        opt_obj = Muon
+        lmo = True
+        l2_prod_norm = True
+        rms_layer_norm = False
+        nuc_approx = None
+        hyperp = {'lr': opt_config.get('lr', 1e-3),
+                  'wd': opt_config.get('weight_decay', 0),
+                  'momentum': opt_config.get('momentum', 0.95),
+                  'nesterov': True,
+                  'ns_steps': opt_config.get('ns_steps', 5),
+                  'lmo': lmo,
+                  'l2_prod_norm': l2_prod_norm,
+                  'nuc_approx': nuc_approx,
+                  'rms_layer_norm': rms_layer_norm,
+                  'adamw_betas': opt_config.get('betas', (0.95, 0.95)),
+                  }
+    elif name == 'muon-gd-l2':
+        opt_obj = Muon
+        lmo = False
+        l2_prod_norm = True
+        rms_layer_norm = False
+        nuc_approx = None
+        hyperp = {'lr': opt_config.get('lr', 1e-3),
+                  'wd': opt_config.get('weight_decay', 0),
+                  'momentum': opt_config.get('momentum', 0.95),
+                  'nesterov': True,
+                  'ns_steps': opt_config.get('ns_steps', 5),
+                  'lmo': lmo,
+                  'l2_prod_norm': l2_prod_norm,
+                  'nuc_approx': nuc_approx,
+                  'rms_layer_norm': rms_layer_norm,
+                  'adamw_betas': opt_config.get('betas', (0.95, 0.95)),
                   }
     else:
         raise KeyError(f"Unknown optimizer name {name}.")

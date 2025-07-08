@@ -35,6 +35,11 @@ AES = { 'sgd':              {'color': "#f68427", 'markevery': 15, 'zorder': 7},
         'adabelief':        {'color': '#FFBF46', 'markevery': 10, 'zorder': 6},
         'adabound':         {'color': '#4f9d69', 'markevery': 10, 'zorder': 5},
         'lion':             {'color': '#dbabab', 'markevery': 10, 'zorder': 4},
+        'muon':             {'color': '#2E86AB', 'markevery': 7, 'zorder': 3},
+        'muon-gd':          {'color': '#6A4C93', 'markevery': 6, 'zorder': 2},
+        'muon-gd-stale':    {'color': '#1B998B', 'markevery': 5, 'zorder': 4},
+        'muon-l2':          {'color': '#F4D35E', 'markevery': 5, 'zorder': 2},
+        'muon-gd-l2':       {'color': '#E26D5A', 'markevery': 6, 'zorder': 3},
         'default':          {'color': 'grey','markevery': 3, 'zorder': 1},
 }
 
