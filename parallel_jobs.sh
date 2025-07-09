@@ -15,10 +15,10 @@ split_config("$config_id", "$config_id", "$config_dir")
 EOF
 
 # Launch each single run as a separate slurm job.
-num_configs=$(ls ${config_dir}/${config_id}/*.json | wc -l)
 job_ids=()
-for i in $(seq 0 $(($num_configs - 1)) | xargs -I{} printf "%02d\n" {}); do
-    run_id=${config_id}/${config_id}-${i}
+for config_path in $(ls ${config_dir}/${config_id}/*.json); do
+    run_name=${config_path#${config_dir}/}
+    run_id=${run_name%.json}
     log_file=${config_dir}/${run_id}.log
     results_file=${output_dir}/${run_id}.json
 

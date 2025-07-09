@@ -2,6 +2,7 @@
 @author: Fabian Schaipp
 """
 
+import hashlib
 import numpy as np
 import torch
 import itertools
@@ -217,8 +218,10 @@ def split_config(exp_id: str, job_name: str, config_dir: str, splits: int=None, 
     list_of_config_lists = [list(a) for a in np.array_split(config_list, splits)]
 
     # store
-    for j, _this_list in enumerate(list_of_config_lists):
-        with open(os.path.join(config_dir, job_name, exp_id) + f'-{j:02d}.json', "w") as f:
+    for _this_list in list_of_config_lists:
+        config_str = json.dumps(_this_list, sort_keys=True)
+        config_hash = hashlib.md5(config_str.encode()).hexdigest()
+        with open(os.path.join(config_dir, job_name, exp_id) + f'-{config_hash}.json', "w") as f:
             json.dump(_this_list, f, indent=4, sort_keys=True)
 
     return
