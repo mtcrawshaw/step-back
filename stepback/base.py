@@ -190,7 +190,8 @@ class Base:
         """Initializes the opt object. If your optimizer needs custom commands, add them here."""
 
         p = self.model.parameters()
-        if 'muon' in self.config["opt"]["name"]:
+        arch_dependent = ["muon", "nesgd"]
+        if any([opt in self.config["opt"]["name"] for opt in arch_dependent]):
             p = self.model.named_parameters()
             hyperp["architecture"] = self.config["model"]
         
