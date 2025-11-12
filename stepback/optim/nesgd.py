@@ -262,6 +262,23 @@ class NESGD(torch.optim.Optimizer):
                 sorted_params[current_norm].append(p)
                 sorted_param_names[current_norm].append(name)
 
+        elif architecture in ['resnet18-pytorch', 'resnet50-pytorch']:
+            # These are Resnets for ImageNet (see models/main.py and models/resnet.py)
+
+            # Use spectral norm for fully connected/convolutional weights that aren't in
+            # last layer, embed_norm for everything else.
+            for name, p in named_params:
+                if name.startswith("layer") and ("conv" in name or "downsample.0" in name) and "weight" in name:
+                    assert p.ndim >= 2
+                    current_norm = "spectral"
+                else:
+                    current_norm = self.embed_norm
+                if current_norm not in sorted_params:
+                    sorted_params[current_norm] = []
+                    sorted_param_names[current_norm] = []
+                sorted_params[current_norm].append(p)
+                sorted_param_names[current_norm].append(name)
+
         else:
             print(f"NESGD with architecture {architecture} is not currently supported. To implement this combination, add an assignment of norms to each parameter for this architecture in {__name__}.")
             print("Parameter names listed below:")

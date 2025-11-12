@@ -1,3 +1,4 @@
+from math import sqrt
 import torch
 from torch.optim.lr_scheduler import LambdaLR, StepLR, SequentialLR
 import warnings
@@ -59,7 +60,7 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
         opt_obj = torch.optim.Adam
         hyperp = {'lr': opt_config.get('lr', 1e-3),
                   'weight_decay': opt_config.get('weight_decay', 0),
-                  'betas': opt_config.get('betas', (0.9, 0.999)),
+                  'betas': opt_config.get('betas', (0.95, 0.95)),
                   'eps': opt_config.get('eps', 1e-8)
                   }
     
@@ -67,7 +68,7 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
         opt_obj = torch.optim.AdamW
         hyperp = {'lr': opt_config.get('lr', 1e-3),
                   'weight_decay': opt_config.get('weight_decay', 0),
-                  'betas': opt_config.get('betas', (0.9, 0.999)),
+                  'betas': opt_config.get('betas', (0.95, 0.95)),
                   'eps': opt_config.get('eps', 1e-8)
                   }
     
@@ -85,7 +86,7 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
         opt_obj = MomoAdam
         hyperp = {'lr': opt_config.get('lr', 1e-3),
                   'weight_decay': opt_config.get('weight_decay', 0),
-                  'betas': opt_config.get('betas', (0.9, 0.999)),
+                  'betas': opt_config.get('betas', (0.95, 0.95)),
                   'eps': opt_config.get('eps', 1e-8),
                   'lb': opt_config.get('lb', 0.),
                   'divide': opt_config.get('divide', True),
@@ -106,7 +107,7 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
         opt_obj = MomoAdam
         hyperp = {'lr': opt_config.get('lr', 1e-3),
                   'weight_decay': opt_config.get('weight_decay', 0),
-                  'betas': opt_config.get('betas', (0.9, 0.999)),
+                  'betas': opt_config.get('betas', (0.95, 0.95)),
                   'eps': opt_config.get('eps', 1e-8),
                   'lb': opt_config.get('lb', 0.),
                   'divide': opt_config.get('divide', True),
@@ -126,7 +127,7 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
         
         hyperp = {'lr': opt_config.get('lr', 1e-3),
                   'weight_decay': opt_config.get('weight_decay', 0),
-                  'betas': opt_config.get('betas', (0.9, 0.999)),
+                  'betas': opt_config.get('betas', (0.95, 0.95)),
                   'eps': opt_config.get('eps', 1e-8),
                   'final_lr': opt_config.get('final_lr', 0.1)
                   }
@@ -135,7 +136,7 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
         opt_obj = AdaBelief
         hyperp = {'lr': opt_config.get('lr', 1e-3),
                   'weight_decay': opt_config.get('weight_decay', 0),
-                  'betas': opt_config.get('betas', (0.9, 0.999)),
+                  'betas': opt_config.get('betas', (0.95, 0.95)),
                   'eps': opt_config.get('eps', 1e-16),
                   }
         
@@ -244,16 +245,29 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
             embed_norm = "adam_infty" if "adam_infty" in name else "adam_2"
         else:
             embed_norm = "linfty"
+
+        lr = opt_config.get('lr', 1e-3)
+        if "spectral_scale" in opt_config or "base_lr" in opt_config:
+            assert not ("spectral_scale" in opt_config and "base_lr" in opt_config)
+            if "spectral_scale" in opt_config:
+                spectral_scale = opt_config["spectral_scale"]
+            else:
+                base_lr = opt_config["base_lr"]
+                spectral_scale = lr / base_lr if lmo else sqrt(lr / base_lr)
+                lr = base_lr
+        else:
+            spectral_scale = 1.0
+
         truncate_loss = opt_config["truncate_loss"] if "momo" in name else None
 
-        hyperp = {'lr': opt_config.get('lr', 1e-3),
+        hyperp = {'lr': lr,
                   'wd': opt_config.get('weight_decay', 0),
                   'momentum': opt_config.get('momentum', 0.95),
                   'ns_steps': opt_config.get('ns_steps', 5),
                   'lmo': lmo,
                   'prod_norm': prod_norm,
                   'nuc_approx': nuc_approx,
-                  'spectral_scale': opt_config.get('spectral_scale', 1.0),
+                  'spectral_scale': spectral_scale,
                   'embed_norm': embed_norm,
                   'adamw_betas': opt_config.get('betas', (0.95, 0.95)),
                   'truncate_loss': truncate_loss,
