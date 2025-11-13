@@ -247,14 +247,16 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
             embed_norm = "linfty"
 
         lr = opt_config.get('lr', 1e-3)
-        if "spectral_scale" in opt_config or "base_lr" in opt_config:
-            assert not ("spectral_scale" in opt_config and "base_lr" in opt_config)
-            if "spectral_scale" in opt_config:
-                spectral_scale = opt_config["spectral_scale"]
+        if "muon_lr_ratio" in opt_config or "muon_lr" in opt_config:
+            assert not ("muon_lr_ratio" in opt_config and "muon_lr" in opt_config)
+            if "muon_lr_ratio" in opt_config:
+                if lmo:
+                    spectral_scale = opt_config["muon_lr_ratio"]
+                else:
+                    spectral_scale = sqrt(opt_config["muon_lr_ratio"])
             else:
-                base_lr = opt_config["base_lr"]
-                spectral_scale = lr / base_lr if lmo else sqrt(lr / base_lr)
-                lr = base_lr
+                muon_lr = opt_config["muon_lr"]
+                spectral_scale = muon_lr / lr if lmo else sqrt(muon_lr / lr)
         else:
             spectral_scale = 1.0
 

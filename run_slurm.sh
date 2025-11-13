@@ -5,7 +5,7 @@
 #SBATCH --constraint=h100
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=8
-#SBATCH --time=4:00:00:00
+#SBATCH --time=48:00:00
 
 if [ "$#" -ne 1 ]; then
     echo Usage: run_slurm.sh RUN_ID
