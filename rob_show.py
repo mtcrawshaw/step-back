@@ -97,10 +97,10 @@ if save:
 
 
 #%% stability plots
-FIGSIZE = (5.2,3.4)
+FIGSIZE = (5.5,4.2)
 ## Cifar100
-fig, axs = plot_stability(R, score='val_score', xaxis='lr', sigma=1, legend=None, ylim= (0.2, 0.7), cutoff=None, figsize=FIGSIZE, save=save)
-fig, axs = plot_stability(R, score='train_loss', xaxis='lr', sigma=1, legend=None,  cutoff=None, figsize=FIGSIZE, save=save)
+fig, axs = plot_stability(R, score='val_score', xaxis='lr', sigma=1, legend=None, ylim= (0.3, 0.93), cutoff=None, figsize=FIGSIZE, save=save)
+fig, axs = plot_stability(R, score='train_loss', xaxis='lr', sigma=1, legend=None,  ylim= (0.07, 3.0),  cutoff=None, figsize=FIGSIZE, save=save)
 ## Cifar10
 # fig, axs = plot_stability(R, score='val_score', xaxis='lr', sigma=1, legend=None,  cutoff=None, figsize=FIGSIZE, save=save)
 # fig, axs = plot_stability(R, score='train_loss', xaxis='lr', sigma=1, legend=None,   cutoff=None, figsize=FIGSIZE, save=save)
