@@ -26,7 +26,7 @@ def get_output_filenames(exp_id, output_dir='output/'):
     The output filename should either be identical to exp_id or have the form <exp_id>-1, <exp_id>-2 etc
     """
     all_files = os.listdir(output_dir)
-    exp_files = [f for f in all_files if (f == exp_id+'.json') or (exp_id+'-' in f)] 
+    exp_files = [f for f in all_files if (f == exp_id+'.json') or (f.startswith(exp_id+'-') and f.endswith('.json'))] 
 
     # sorting
     exp_files.sort() # first sort integers

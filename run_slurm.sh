@@ -57,5 +57,5 @@ else
 fi
 
 module load python
-source stepback_env/bin/activate
-python3 run.py -i $run_id -nw 8 --data-dir $data_dir
+source venv/bin/activate
+python run.py -i $run_id -nw 8 --data-dir $data_dir

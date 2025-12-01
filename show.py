@@ -39,6 +39,7 @@ plt.rcParams['axes.linewidth'] = 1
 plt.rc('text', usetex=True)
 
 #%%
+
 R = Record(output_names)
 
 R.filter(drop={'name': ['momo-adam-star', 'momo-star']})

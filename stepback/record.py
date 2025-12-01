@@ -23,24 +23,27 @@ SCORE_NAMES = {'train_loss': 'Training loss',
                'fstar': r'$f_*^k$'
 }
 
-AES = { 'sgd':              {'color': "#f68427", 'markevery': 15, 'zorder': 7},
-        'sgd-m':            {'color': '#de9151', 'markevery': 8, 'zorder': 8},
-        'adam':             {'color': '#f34213', 'markevery': 10, 'zorder': 9}, 
-        'adamw':            {'color': '#f34213', 'markevery': 10, 'zorder': 9},
-        'momo':             {'color': '#023047', 'markevery': 5, 'zorder': 11},
-        'momo-adam':        {'color': '#3F88C5', 'markevery': 6, 'zorder': 10},
-        'momo-star':        {'color': '#87b37a', 'markevery': 3, 'zorder': 13},
-        'momo-adam-star':   {'color': '#648381', 'markevery': 4, 'zorder': 12},
-        'prox-sps':         {'color': '#97BF88', 'markevery': 7, 'zorder': 6},
-        'adabelief':        {'color': '#FFBF46', 'markevery': 10, 'zorder': 6},
-        'adabound':         {'color': '#4f9d69', 'markevery': 10, 'zorder': 5},
-        'lion':             {'color': '#dbabab', 'markevery': 10, 'zorder': 4},
-        'muon':             {'color': '#2E86AB', 'markevery': 7, 'zorder': 3},
-        'muon-gd':          {'color': '#6A4C93', 'markevery': 6, 'zorder': 2},
-        'muon-gd-stale':    {'color': '#1B998B', 'markevery': 5, 'zorder': 4},
-        'muon-l2':          {'color': '#F4D35E', 'markevery': 5, 'zorder': 2},
-        'muon-gd-l2':       {'color': '#E26D5A', 'markevery': 6, 'zorder': 3},
-        'default':          {'color': 'grey','markevery': 3, 'zorder': 1},
+AES = { 'sgd':              {'color': "#f68427", 'markevery': 15, 'zorder': 7, 'linestyle': '-'},
+        'sgd-m':            {'color': '#de9151', 'markevery': 8, 'zorder': 8, 'linestyle': '-'},
+        'adam':             {'color': '#00518F', 'markevery': 10, 'zorder': 9, 'linestyle': '-'}, 
+        'adamw':            {'color': '#00518F', 'markevery': 10, 'zorder': 9, 'linestyle': '-'},
+        'momo':             {'color': '#023047', 'markevery': 5, 'zorder': 11, 'linestyle': '-'},
+        'momo-adam':        {'color': '#3F88C5', 'markevery': 6, 'zorder': 10, 'linestyle': '-'},
+        'momo-star':        {'color': '#87b37a', 'markevery': 3, 'zorder': 13, 'linestyle': '-'},
+        'momo-adam-star':   {'color': '#648381', 'markevery': 4, 'zorder': 12, 'linestyle': '-'},
+        'prox-sps':         {'color': '#97BF88', 'markevery': 7, 'zorder': 6, 'linestyle': '-'},
+        'adabelief':        {'color': '#FFBF46', 'markevery': 10, 'zorder': 6, 'linestyle': '-'},
+        'adabound':         {'color': '#4f9d69', 'markevery': 10, 'zorder': 5, 'linestyle': '-'},
+        'lion':             {'color': '#dbabab', 'markevery': 10, 'zorder': 4, 'linestyle': '-'},
+        'muon':             {'color': '#2E86AB', 'markevery': 7, 'zorder': 3, 'linestyle': '-'},
+        'muon-gd':          {'color': '#6A4C93', 'markevery': 6, 'zorder': 2, 'linestyle': '-'},
+        'muon-gd-stale':    {'color': '#1B998B', 'markevery': 5, 'zorder': 4, 'linestyle': '-'},
+        'muon-l2':          {'color': '#F4D35E', 'markevery': 5, 'zorder': 2, 'linestyle': '-'},
+        'muon-gd-l2':       {'color': '#E26D5A', 'markevery': 6, 'zorder': 3, 'linestyle': '-'},
+        'muon-PolarExp':    {'color': 'k', 'markevery': 3, 'zorder': 1, 'linestyle': '-'},
+        'muon-You':         {'color': '#8A2BE2', 'markevery': 3, 'zorder': 1, 'linestyle': ':'},
+        'muon-Jordan':      {'color': '#FF0000', 'markevery': 3, 'zorder': 1, 'linestyle': '--'},
+        'default':          {'color': 'grey','markevery': 3, 'zorder': 1, 'linestyle': '-'},
 }
 
 # more colors:
@@ -365,7 +368,8 @@ class Record:
                         markevery=(self.aes.get(conf['name'], self.aes['default']).get('markevery'), 20), 
                         alpha = alpha,
                         label=label,
-                        zorder=self.aes.get(conf['name'], self.aes['default']).get('zorder')
+                        zorder=self.aes.get(conf['name'], self.aes['default']).get('zorder'),
+                        ls=self.aes.get(conf['name'], self.aes['default']).get('linestyle', '-')
                         )
         
         ax.set_xlabel('Epoch')

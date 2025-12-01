@@ -20,14 +20,16 @@ def plot_stability(R,
                    cutoff=None,
                    ignore_columns=list(), 
                    legend=None, 
+                   xlim=None,
                    ylim=None, 
                    log_scale=True, 
                    figsize=(6,5), 
+                   at_pct=None,
                    save=False
                    ):
     """
     Generates stability plot.
-
+    
     Arguments:
         score: name of the score on y-axis, for example 'val_score' or 'train_loss'
         xaxis: parameter to group by, for example 'lr' for initial learning rate
@@ -37,6 +39,7 @@ def plot_stability(R,
         legend: 'full', None, or a list of keys that are displayed, e.g. ['lr', 'weight_decay']
         ylim: Set ylim values. By default will be set to [0,1] for <_score> metrics
         log_scale: Use log-scale for <_loss> metrics. Not used for <_score> metrics
+        
 
     """
     # plot only one score
@@ -48,11 +51,40 @@ def plot_stability(R,
     fig, axs = plt.subplots(len(score),1,figsize=figsize)
 
     for j, s in enumerate(score):
-        df = R.build_sweep_df(score=s,
-                              xaxis=xaxis,
-                              ignore_columns=ignore_columns,
-                              cutoff=cutoff
-        )
+        if at_pct is None:
+            df = R.build_sweep_df(score=s,
+                                  xaxis=xaxis,
+                                  ignore_columns=ignore_columns,
+                                  cutoff=cutoff)
+        else:
+            # Build early-epoch sweep dataframe manually
+            base = R.base_df.copy()
+            if s not in base.columns:
+                continue
+            max_epoch = base.epoch.max()
+            target_epoch = int(np.ceil(max_epoch * at_pct))
+            target_epoch = max(base.epoch.min(), target_epoch)
+            print(f"Building early-epoch ({at_pct*100:.2f}%) stability plot for {s} at epoch {target_epoch} (max epoch: {max_epoch})")
+            rows = []
+            for (name, lr), g in base.groupby(['name', xaxis]):
+                # Collect per-seed values closest to target_epoch
+                vals = []
+                for _id, g_id in g.groupby('id'):
+                    nearest_idx = (g_id['epoch'] - target_epoch).abs().argmin()
+                    vals.append(g_id.iloc[nearest_idx][s])
+                if len(vals) == 0:
+                    continue
+                rows.append({
+                    'name': name,
+                    xaxis: float(lr),
+                    s: float(np.mean(vals)),
+                    s + '_std': float(np.std(vals))
+                })
+            df = pd.DataFrame(rows)
+            if df.empty:
+                continue
+            df = df.sort_values(xaxis)
+            df.set_index('name', inplace=True)
 
         ax = axs.ravel()[j] if len(score) > 1 else axs 
         # .unique(level=) might be useful at some point
@@ -86,10 +118,10 @@ def plot_stability(R,
                     c=R.aes.get(name, R.aes['default'])['color'], 
                     label=label,
                     marker="o",
-                    ls=next(ls_cycles[name]),
+                    ls=R.aes.get(name, R.aes['default']).get('linestyle',
+                        next(ls_cycles[name])),
                     zorder=R.aes.get(name, R.aes['default']).get('zorder')
                     )
-            
             if sigma > 0:
                 ax.fill_between(x, y-sigma*y2, y+sigma*y2,
                                 color=R.aes.get(name, R.aes['default'])['color'],
@@ -110,6 +142,8 @@ def plot_stability(R,
         elif s in ['train_score', 'val_score']:
             ax.set_ylim(0,1)
 
+        if xlim is not None:
+            ax.set_xlim(xlim)
         if (s in ['train_loss', 'val_loss']) and log_scale:
             ax.set_yscale('log')
 
@@ -120,6 +154,36 @@ def plot_stability(R,
         # xlabel only in last row
         if j+1 < len(score):
             ax.set_xlabel('')
+
+        # Print per-method best metric and corresponding lr for this score
+        try:
+            df_flat = df.reset_index().dropna(subset=[s, xaxis])
+            if not df_flat.empty:
+                is_loss = s.endswith('loss')
+                idx_series = (df_flat.groupby('name')[s].idxmin() 
+                              if is_loss else df_flat.groupby('name')[s].idxmax())
+
+                def _fmt_lr(v):
+                    try:
+                        return f"{float(v):g}"
+                    except Exception:
+                        return str(v)
+
+                def _fmt_val(v):
+                    try:
+                        return f"{float(v):.6g}"
+                    except Exception:
+                        return str(v)
+
+                # Use the exact metric name for non-loss (e.g., 'val_score')
+                metric_label = 'loss' if is_loss else s
+                prefix = f"Early({at_pct*100:.2f}%)" if at_pct is not None else "Best"
+                for method, idx_row in idx_series.items():
+                    row = df_flat.loc[idx_row]
+                    print(f"{prefix} {method} (lr = {_fmt_lr(row[xaxis])}) {metric_label} = {_fmt_val(row[s])}")
+        except Exception:
+            # Be tolerant to any unexpected df shape issues
+            pass
             
     if legend is not None:
         # legend has all specific opt arguments
@@ -139,7 +203,8 @@ def plot_stability(R,
             fig.subplots_adjust(top=0.855,bottom=0.155,left=0.145,right=0.98)
     
     if save:
-        fig.savefig('output/plots/' + R.exp_id_str + f"/stability_{xaxis}_" + f"{'_'.join(score)}.pdf")
+        suffix = f"earlypct_{at_pct}" if at_pct is not None else ""
+        fig.savefig('output/plots/' + R.exp_id_str + f"/stability_{xaxis}_{'_'.join(score)}{('_'+suffix) if suffix else ''}.pdf")
     
     return fig, axs
 

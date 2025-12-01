@@ -2,8 +2,70 @@ from itertools import repeat
 import torch
 
 
+# @torch.compile
+def jiacheng(G: torch.Tensor, steps):
+    """
+    Jiacheng optimized polynomials
+    """
+    assert len(G.shape) == 2
+    abc_list = [
+        (3955/1024, -8306/1024, 5008/1024),
+        (3735/1024, -6681/1024, 3463/1024),
+        (3799/1024, -6499/1024, 3211/1024),
+        (4019/1024, -6385/1024, 2906/1024),
+        (2677/1024, -3029/1024, 1162/1024),
+        (2172/1024, -1833/1024,  682/1024)
+    ]
+    X = G.bfloat16()
+    if G.size(0) > G.size(1):
+        X = X.T
+    # Ensure spectral norm is at most 1
+    X = X / (X.norm() + 1e-7)
+    # Perform the NS iterations
+    if steps > len(abc_list):
+        steps = len(abc_list)
+    for a, b, c in abc_list[:steps]:
+        A = X @ X.T
+        B = (
+            b * A + c * A @ A
+        )  # adapted from suggestion by @jxbz, @leloykun, and @YouJiacheng
+        X = a * X + B @ X
+
+    if G.size(0) > G.size(1):
+        X = X.T
+    return X
+
+def newtonschulz5(G: torch.Tensor, steps):
+    """
+    Newton-Schulz d =5  iteration 
+    """
+    assert len(G.shape) == 2
+    a, b, c = (1.875, -1.25, 0.375)
+    X = G.bfloat16()
+    if G.size(0) > G.size(1):
+        X = X.T
+    # Ensure spectral norm is at most 1
+    X = X / (X.norm() + 1e-7)
+    # Perform the NS iterations
+    for _ in range(steps):
+        A = X @ X.T
+        B = (
+            b * A + c * A @ A
+        )  # adapted from suggestion by @jxbz, @leloykun, and @YouJiacheng
+        X = a * X + B @ X
+
+    if G.size(0) > G.size(1):
+        X = X.T
+    return X
+
+# pt(x) = 15
+# 8 x − 10
+# 8 x3 + 3
+# 8 x5
+
+
 #@torch.compile  ## I had to comment this out, it was throwing an error
-def zeropower_via_newtonschulz5(G, steps):
+def zeropower_via_newtonschulz5(G: torch.Tensor, steps):
     """
     Newton-Schulz iteration to compute the zeroth power / orthogonalization of G. We opt to use a
     quintic iteration whose coefficients are selected to maximize the slope at zero. For the purpose
@@ -32,7 +94,7 @@ def zeropower_via_newtonschulz5(G, steps):
         X = X.T
     return X
 
-polar_express_coeffs_list = [
+coeffs_list = [
     (8.28721201814563, -23.595886519098837, 17.300387312530933),
     (4.107059111542203, -2.9478499167379106, 0.5448431082926601),
     (3.9486908534822946, -2.908902115962949, 0.5518191394370137),
@@ -40,28 +102,24 @@ polar_express_coeffs_list = [
     (2.300652019954817, -1.6689039845747493, 0.4188073119525673),
     (1.891301407787398, -1.2679958271945868, 0.37680408948524835),
     (1.8750014808534479, -1.2500016453999487, 0.3750001645474248),
-    (1.875, -1.25, 0.375),
+    (1.875, -1.25, 0.375),  # subsequent coeffs equal this numerically
 ]
+# safety factor for numerical stability (but exclude last polynomial)
+coeffs_list = [(a / 1.01, b / 1.01**3, c / 1.01**5)
+                for (a, b, c) in coeffs_list[:-1]] + [coeffs_list[-1]]
 
-#@torch.compile
-def PolarExpress(G: torch.Tensor, steps, frob_eps=1e-2, deflation_eps=1e-2):
-    assert G.ndim >= 2, "Input tensor must have at least two dimensions."
-    X = G.bfloat16()
-    if G.size(-2) > G.size(-1):  # opposite convention from our other code
-        X = X.mT
-    # Ensure spectral norm is at most 1
-    X = X / (X.norm(dim=(-2, -1), keepdim=True) * (1 + frob_eps))
-
-    hs = polar_express_coeffs_list[:steps] + list(repeat(polar_express_coeffs_list[-1], steps - len(polar_express_coeffs_list)))
+# @torch.compile
+def PolarExpress(G: torch.Tensor, steps: int) -> torch.Tensor:
+    assert G.ndim >= 2
+    X = G.bfloat16()  # for speed
+    if G.size(-2) > G.size(-1): X = X.mT  # this reduces FLOPs
+    X = X / (X.norm(dim=(-2, -1), keepdim=True)  +1e-7)
+    hs = coeffs_list[:steps] + list( 
+        repeat(coeffs_list[-1], steps - len(coeffs_list)))
     for a, b, c in hs:
-        a = a / (1 + deflation_eps)
-        b = b / (1 + deflation_eps)
-        c = c / (1 + deflation_eps)
         A = X @ X.mT
         B = b * A + c * A @ A
-        X = a * X + B @ X
-
-    if G.size(-2) > G.size(-1):
-        X = X.mT
+        X = a * X + B @ X  # X <- aX + bX^3 + cX^5
+    if G.size(-2) > G.size(-1): X = X.mT
     return X
 

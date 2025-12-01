@@ -1,7 +1,7 @@
 import torch
 import math
 
-from .polar import PolarExpress
+from .polar import PolarExpress, jiacheng, zeropower_via_newtonschulz5, newtonschulz5
 
 
 class LinftyNorm:
@@ -16,15 +16,25 @@ class LinftyNorm:
 
 
 class SpectralNorm:
-    def __init__(self, spectral_scale=1.0, nuc_approx=None, ns_steps=5):
+    def __init__(self, spectral_scale=1.0, nuc_approx=None, ns_steps=5, polarmethod="polarexpress"):
         assert nuc_approx in [None, "fro", "past"]
         self.spectral_scale = spectral_scale
         self.nuc_approx = nuc_approx
-        self.ns_steps = 5
+        self.ns_steps = ns_steps
+        if polarmethod == "polarexpress":
+            self.polar_func = PolarExpress
+        elif polarmethod == "jiacheng":
+            self.polar_func = jiacheng
+        elif polarmethod == "zeropower":
+            self.polar_func = zeropower_via_newtonschulz5
+        elif polarmethod == "newton":
+            self.polar_func = newtonschulz5
+        else:
+            raise NotImplementedError
 
     def lmo(self, g, state):
         g_mat = g.reshape(g.size(0), -1)
-        u_mat = PolarExpress(g_mat, steps=self.ns_steps)
+        u_mat = self.polar_func(g_mat, steps=self.ns_steps)
         u = u_mat.view(g.shape)
         return self.spectral_scale * u
 
@@ -32,7 +42,7 @@ class SpectralNorm:
         if self.nuc_approx is None or (self.nuc_approx == "past" and "past_nuc" not in state):
             # If G = UDV^T, then nuc(G) = tr(G @ UV^T).
             g_mat = g.reshape(g.size(0), -1)
-            u_mat = PolarExpress(g_mat, steps=self.ns_steps)
+            u_mat = self.polar_func(g_mat, steps=self.ns_steps)
             nuc = (g_mat.bfloat16() * u_mat).sum()
         elif self.nuc_approx == "fro":
             nuc = torch.linalg.matrix_norm(g, ord="fro")
@@ -204,6 +214,7 @@ class NESGD(torch.optim.Optimizer):
         adamw_betas=(0.95, 0.95),
         adamw_eps=1e-8,
         truncate_loss=None,
+        polarmethod="polarexpress"
     ):
 
         assert prod_norm in ["linfty", "l2", "hybrid"]
@@ -221,6 +232,7 @@ class NESGD(torch.optim.Optimizer):
         self.nuc_approx = nuc_approx
         self.spectral_scale = spectral_scale
         self.truncate_loss = truncate_loss
+        self.polarmethod = polarmethod
         if self.nuc_approx is not None:
             print(f"Using {self.nuc_approx} approximation for nuclear norm.")
 
@@ -297,15 +309,15 @@ class NESGD(torch.optim.Optimizer):
 
         # Encode parameter norms in optimizer state.
         for norm in sorted_params:
-
             norm_kwargs = {}
             if norm == "spectral":
                 norm_kwargs["spectral_scale"] = spectral_scale
                 norm_kwargs["nuc_approx"] = nuc_approx
                 norm_kwargs["ns_steps"] = ns_steps
+                norm_kwargs["polarmethod"] = polarmethod
             elif norm == ["adam_infty", "adam_2"]:
                 norm_kwargs["eps"] = adamw_eps
-
+            
             for p in sorted_params[norm]:
                 self.state[p]["norm"] = norm
                 self.state[p]["norm_obj"] = norm_obj_dict[norm](**norm_kwargs)

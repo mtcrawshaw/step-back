@@ -7,10 +7,9 @@
     "opt": [
         {"name": "adamw", "lr": [0.00001, 0.0001, 0.001, 0.01, 0.1], "lr_schedule": "constant"},
         {"name": "sgd-m", "lr": [0.001, 0.01, 0.1, 1, 10], "momentum": 0.9, "dampening": 0.9, "lr_schedule": "constant"},
-        {"name": "nesgd-adam_infty-lmo", "lr": [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0], "muon_lr_ratio": 100.0, "lr_schedule": "constant"},
-        {"name": "nesgd-lmo", "lr": [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0], "muon_lr_ratio": 100.0, "lr_schedule": "constant"},
-        {"name": "nesgd-adam_infty-lmo-momo-stale", "lr": [0.0001, 0.001, 0.01, 0.1, 1.0], "muon_lr_ratio": 1.0, "lr_schedule": "constant", "truncate_loss": 0.0},
-        {"name": "nesgd-hybrid_prod-adam_2-momo-stale", "lr": [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0], "muon_lr_ratio": 10.0, "lr_schedule": "constant", "truncate_loss": 0.0}
+        {"name": "nesgd-adam_infty-lmo-polarexpress", "lr": [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0], "muon_lr_ratio": 100.0, "lr_schedule": "constant"},
+        {"name": "nesgd-adam_infty-lmo-jordan", "lr": [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0], "muon_lr_ratio": 100.0, "lr_schedule": "constant", "polarmethod": "zeropower"},
+        {"name": "nesgd-adam_infty-lmo-you", "lr": [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0], "muon_lr_ratio": 100.0, "lr_schedule": "constant", "polarmethod": "jiacheng"}
     ],
     "batch_size": 128,
     "max_epoch": 50,

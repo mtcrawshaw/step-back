@@ -259,7 +259,10 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
                 spectral_scale = muon_lr / lr if lmo else sqrt(muon_lr / lr)
         else:
             spectral_scale = 1.0
-
+        if "polarmethod" in opt_config:
+            polarmethod = opt_config["polarmethod"]
+        else:
+            polarmethod = "polarexpress"
         truncate_loss = opt_config["truncate_loss"] if "momo" in name else None
 
         hyperp = {'lr': lr,
@@ -273,6 +276,7 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
                   'embed_norm': embed_norm,
                   'adamw_betas': opt_config.get('betas', (0.95, 0.95)),
                   'truncate_loss': truncate_loss,
+                  'polarmethod': polarmethod
         }
 
     else:
