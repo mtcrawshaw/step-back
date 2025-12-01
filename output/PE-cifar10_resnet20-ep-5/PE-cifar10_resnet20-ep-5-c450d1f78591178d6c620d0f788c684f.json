@@ -1,0 +1,99 @@
+[
+    {
+        "config": {
+            "batch_size": 128,
+            "dataset": "cifar10",
+            "dataset_kwargs": {},
+            "loss_func": "cross_entropy",
+            "max_epoch": 5,
+            "model": "resnet20",
+            "model_kwargs": {
+                "batch_norm": true
+            },
+            "opt": {
+                "lr": 0.1,
+                "lr_schedule": "constant",
+                "muon_lr_ratio": 100.0,
+                "name": "nesgd-adam_infty-lmo-jordan",
+                "polarmethod": "zeropower"
+            },
+            "run_id": 2,
+            "score_func": "cross_entropy_accuracy"
+        },
+        "history": [
+            {
+                "epoch": 0,
+                "grad_norm": 0.1978299468755722,
+                "learning_rate": 0.1,
+                "model_norm": 63720.078125,
+                "train_epoch_time": 14.170339345932007,
+                "train_loss": 1.9998092281341553,
+                "train_score": 0.2235,
+                "val_loss": 1.9942391593933106,
+                "val_score": 0.2312
+            },
+            {
+                "epoch": 1,
+                "grad_norm": 0.22552743554115295,
+                "learning_rate": 0.1,
+                "model_norm": 66488.1015625,
+                "train_epoch_time": 13.922464847564697,
+                "train_loss": 1.7322861513519288,
+                "train_score": 0.32238,
+                "val_loss": 1.7624860691070556,
+                "val_score": 0.3155
+            },
+            {
+                "epoch": 2,
+                "grad_norm": 0.3406125605106354,
+                "learning_rate": 0.1,
+                "model_norm": 69159.5,
+                "train_epoch_time": 13.862464427947998,
+                "train_loss": 1.588760281906128,
+                "train_score": 0.4107200000190735,
+                "val_loss": 1.6926915950775145,
+                "val_score": 0.3939
+            },
+            {
+                "epoch": 3,
+                "grad_norm": 0.24801787734031677,
+                "learning_rate": 0.1,
+                "model_norm": 71813.9453125,
+                "train_epoch_time": 13.907442331314087,
+                "train_loss": 1.3508958687210082,
+                "train_score": 0.50632,
+                "val_loss": 1.3740491916656494,
+                "val_score": 0.5044
+            },
+            {
+                "epoch": 4,
+                "grad_norm": 0.33051612973213196,
+                "learning_rate": 0.1,
+                "model_norm": 74471.2578125,
+                "train_epoch_time": 13.93023157119751,
+                "train_loss": 1.2336196767425538,
+                "train_score": 0.5614999999809265,
+                "val_loss": 1.1845287691116333,
+                "val_score": 0.5786
+            }
+        ],
+        "summary": {
+            "data_parallel": "false",
+            "end_time": "2025-11-24 10:25:21.513285",
+            "final_model_norm": 74471.2578125,
+            "init_model_norm": 45.715301513671875,
+            "input_dim": [
+                3,
+                32,
+                32
+            ],
+            "num_batches_per_epoch": 390,
+            "num_workers": 8,
+            "output_dim": [
+                1
+            ],
+            "start_time": "2025-11-24 10:23:56.016821",
+            "step_scheduler_on_epoch": true
+        }
+    }
+]
