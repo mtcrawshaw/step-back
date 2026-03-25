@@ -173,7 +173,9 @@ class Base:
         
         self._init_opt(opt_obj, hyperp)
     
-        self.sched, self._step_scheduler_on_epoch = get_scheduler(self.config['opt'], self.opt)
+        self.sched, self._step_scheduler_on_epoch = get_scheduler(
+            self.config['opt'], self.opt, self.config['max_epoch']
+        )
         
         #============ Results ==============
         opt_val = self._compute_opt_value()
@@ -263,6 +265,13 @@ class Base:
                 score_list += [score_dict]
             
             self._epochs_trained += 1
+            total_epoch_time = time.time() - s_time
+
+            msg = "    "
+            msg += f"Train loss: {score_dict['train_loss']:.5f}"
+            msg += f", Validation score: {score_dict['val_score']:.5f}"
+            msg += f", Time: {total_epoch_time}"
+            print(msg)
         
         end_time = str(datetime.datetime.now())
 

@@ -228,63 +228,34 @@ class NESGD(torch.optim.Optimizer):
         self.embed_norm = embed_norm
         sorted_params = {}
         sorted_param_names = {}
+
         if architecture in ['resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110', 'resnet1202']:
-            # These are Resnets for CIFAR (see models/main.py and models/resnet.py)
-
-            # Use spectral norm for fully connected/convolutional weights that aren't in
-            # last layer, embed_norm for everything else.
-            for name, p in named_params:
-                if name.startswith("layer") and "conv" in name and "weight" in name:
-                    assert p.ndim >= 2
-                    current_norm = "spectral"
-                else:
-                    current_norm = self.embed_norm
-                if current_norm not in sorted_params:
-                    sorted_params[current_norm] = []
-                    sorted_param_names[current_norm] = []
-                sorted_params[current_norm].append(p)
-                sorted_param_names[current_norm].append(name)
-
+            use_spectral = lambda name: name.startswith("layer") and "conv" in name and "weight" in name
         elif architecture == "vit":
-
-            # Use spectral norm for fully connected weights that aren't in last layer,
-            # embed_norm for everything else.
-            for name, p in named_params:
-                modules = ["to_qkv", "to_out", "net"]
-                if name.startswith("transformer.layers") and any([m in name for m in modules]) and "weight" in name:
-                    assert p.ndim >= 2
-                    current_norm = "spectral"
-                else:
-                    current_norm = self.embed_norm
-                if current_norm not in sorted_params:
-                    sorted_params[current_norm] = []
-                    sorted_param_names[current_norm] = []
-                sorted_params[current_norm].append(p)
-                sorted_param_names[current_norm].append(name)
-
-        elif architecture in ['resnet18-pytorch', 'resnet50-pytorch']:
-            # These are Resnets for ImageNet (see models/main.py and models/resnet.py)
-
-            # Use spectral norm for fully connected/convolutional weights that aren't in
-            # last layer, embed_norm for everything else.
-            for name, p in named_params:
-                if name.startswith("layer") and ("conv" in name or "downsample.0" in name) and "weight" in name:
-                    assert p.ndim >= 2
-                    current_norm = "spectral"
-                else:
-                    current_norm = self.embed_norm
-                if current_norm not in sorted_params:
-                    sorted_params[current_norm] = []
-                    sorted_param_names[current_norm] = []
-                sorted_params[current_norm].append(p)
-                sorted_param_names[current_norm].append(name)
-
+            modules = ["to_qkv", "to_out", "net"]
+            use_spectral = lambda name: name.startswith("transformer.layers") and any([m in name for m in modules]) and "weight" in name
+        elif architecture in ["resnet18-pytorch", "resnet50-pytorch"]:
+            use_spectral = lambda name: name.startswith("layer") and ("conv" in name or "downsample.0" in name) and "weight" in name
+        elif architecture in ['resnet18-kuangliu', 'resnet34-kuangliu', 'resnet50-kuangliu', 'resnet101-kuangliu', 'resnet152-kuangliu']:
+            use_spectral = lambda name: name.startswith("layer") and (("conv" in name and "weight" in name) or "shortcut.0.weight" in name)
         else:
             print(f"NESGD with architecture {architecture} is not currently supported. To implement this combination, add an assignment of norms to each parameter for this architecture in {__name__}.")
             print("Parameter names listed below:")
             for name, _ in named_params:
                 print(name)
             raise NotImplementedError
+
+        for name, p in named_params:
+            if use_spectral(name):
+                assert p.ndim >= 2
+                current_norm = "spectral"
+            else:
+                current_norm = self.embed_norm
+            if current_norm not in sorted_params:
+                sorted_params[current_norm] = []
+                sorted_param_names[current_norm] = []
+            sorted_params[current_norm].append(p)
+            sorted_param_names[current_norm].append(name)
 
         print("Params with spectral norm: ", sorted_param_names["spectral"])
         print(f"Params with {self.embed_norm} norm: ", sorted_param_names[self.embed_norm])
@@ -435,7 +406,7 @@ class NESGD(torch.optim.Optimizer):
                     if "past_nuc" not in state:
                         state["past_nuc"] = torch.zeros(1, device=p.device)
                     # If G = UDV^T, then nuc(G) = <G, UV^T>.
-                    state["past_nuc"] = (pre_lmo.bfloat16() * post_lmo).sum()
+                    state["past_nuc"] = (pre_lmo.bfloat16() * post_lmo).sum() / self.spectral_scale
 
                 # Apply layer-wise scaling to lr.
                 lr_scale = lr_scalings[p]

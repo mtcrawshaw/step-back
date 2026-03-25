@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, cos
 import torch
 from torch.optim.lr_scheduler import LambdaLR, StepLR, SequentialLR
 import warnings
@@ -280,7 +280,7 @@ def get_optimizer(opt_config: dict) -> Tuple[torch.optim.Optimizer, dict]:
         
     return opt_obj, hyperp
 
-def get_scheduler(config: dict, opt: torch.optim.Optimizer) -> torch.optim.lr_scheduler._LRScheduler:
+def get_scheduler(config: dict, opt: torch.optim.Optimizer, max_epoch: int) -> torch.optim.lr_scheduler._LRScheduler:
     """
     Main function mapping to a learning rate scheduler.
     """
@@ -310,6 +310,33 @@ def get_scheduler(config: dict, opt: torch.optim.Optimizer) -> torch.optim.lr_sc
         gamma = float(name.split('_')[2])
         scheduler = StepLR(opt, step_size=step_size, gamma=gamma)
         
+    elif name == 'warmup-linear':
+        assert warmup_steps == 0 # gross hack: don't use unified warmup implementation
+        assert step_on_epoch
+
+        warmup_epochs = round(config['warmup_fraction'] * max_epoch)
+
+        def get_lr(step):
+            if step < warmup_epochs:
+                return (step + 1) / warmup_epochs
+            else:
+                return (max_epoch - step) / (max_epoch - warmup_epochs)
+
+        scheduler = LambdaLR(opt, lr_lambda=get_lr)
+
+    elif name == 'cosine':
+        assert step_on_epoch
+        warmup_fraction = config.get('warmup_fraction', 0.05)
+        warmup_epochs = round(warmup_fraction * max_epoch)
+
+        def get_lr(step):
+            if step < warmup_epochs:
+                return (step + 1) / warmup_epochs
+            else:
+                progress = (step - warmup_epochs) / (total_epochs - warmup_epochs)
+                return 0.5 * (1 + cos(math.pi * progress))
+        scheduler = LambdaLR(opt, lr_lambda=get_lr)
+
     else:
         raise ValueError(f"Unknown learning rate schedule name {name}.")
     
